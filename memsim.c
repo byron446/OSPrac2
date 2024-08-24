@@ -68,99 +68,99 @@ main(int argc, char *argv[])
 	page	Pvictim;
 	FILE	*trace;
 
-
-        if (argc < 5) {
-             printf( "Usage: ./memsim inputfile numberframes replacementmode debugmode \n");
-             exit ( -1);
-	}
-	else {
+	// Check for correct number of arguments
+    if (argc < 5) {
+        printf( "Usage: ./memsim inputfile numberframes replacementmode debugmode \n");
+        exit ( -1);
+	} else {
         tracename = argv[1];	
-	trace = fopen( tracename, "r");
-	if (trace == NULL ) {
-             printf( "Cannot open trace file %s \n", tracename);
-             exit ( -1);
-	}
-	numFrames = atoi(argv[2]);
+		trace = fopen( tracename, "r");
+		// Check for valid file
+		if (trace == NULL ) {
+            printf( "Cannot open trace file %s \n", tracename);
+            exit (-1);
+		}
+		numFrames = atoi(argv[2]);
+		// Check for valid number of frames
         if (numFrames < 1) {
             printf( "Frame number must be at least 1\n");
-            exit ( -1);
+            exit (-1);
         }
-        if (strcmp(argv[3], "lru\0") == 0)
+		// Check for valid replacement policy
+        if (strcmp(argv[3], "lru\0") == 0) {
             replace = lru;
-	    else if (strcmp(argv[3], "rand\0") == 0)
+		} else if (strcmp(argv[3], "rand\0") == 0) {
 	     replace = random;
-	          else if (strcmp(argv[3], "clock\0") == 0)
-                       replace = clock;		 
-	               else if (strcmp(argv[3], "fifo\0") == 0)
-                             replace = fifo;		 
-        else 
-	  {
-             printf( "Replacement algorithm must be rand/fifo/lru/clock  \n");
-             exit ( -1);
-	  }
-
-        if (strcmp(argv[4], "quiet\0") == 0)
+		} else if (strcmp(argv[3], "clock\0") == 0) {
+            replace = clock;		 
+		} else if (strcmp(argv[3], "fifo\0") == 0) {
+            replace = fifo;		 
+		} else {
+            printf( "Replacement algorithm must be rand/fifo/lru/clock  \n");
+            exit (-1);
+	  	}
+		// Check for valid logging level
+        if (strcmp(argv[4], "quiet\0") == 0){
             debugmode = 0;
-	else if (strcmp(argv[4], "debug\0") == 0)
+		} else if (strcmp(argv[4], "debug\0") == 0) {
             debugmode = 1;
-        else 
-	  {
-             printf( "Replacement algorithm must be quiet/debug  \n");
-             exit ( -1);
-	  }
+		} else {
+            printf( "Replacement algorithm must be quiet/debug  \n");
+            exit (-1);
+	  	}
 	}
 	
-	done = createMMU (numFrames);
-	if ( done == -1 ) {
-		 printf( "Cannot create MMU" ) ;
-		 exit(-1);
-        }
-	no_events = 0 ;
-	disk_writes = 0 ;
-	disk_reads = 0 ;
+	// Create MMU
+	done = createMMU(numFrames);
+	if (done == -1) {
+		printf( "Cannot create MMU" );
+		exit(-1);
+    }
 
-        do_line = fscanf(trace,"%x %c",&address,&rw);
-	while ( do_line == 2)
+	no_events = 0;
+	disk_writes = 0;
+	disk_reads = 0;
+
+    do_line = fscanf(trace,"%x %c",&address,&rw);
+	// Read lines of input file and simulate actions
+	while (do_line == 2)
 	{
 		page_number =  address >> pageoffset;
 		frame_no = checkInMemory( page_number) ;    /* ask for physical address */
 
 		if ( frame_no == -1 )
 		{
-		  disk_reads++ ;			/* Page fault, need to load it into memory */
-		  if (debugmode) 
-		      printf( "Page fault %8d \n", page_number) ;
-		  if (allocated < numFrames)  			/* allocate it to an empty frame */
-		   {
-                     frame_no = allocateFrame(page_number);
-		     allocated++;
-                   }
-                   else{
-		      Pvictim = selectVictim(page_number, replace) ;   /* returns page number of the victim  */
-		      frame_no = checkInMemory( page_number) ;    /* find out the frame the new page is in */
-		   if (Pvictim.modified)           /* need to know victim page and modified  */
-	 	      {
-                      disk_writes++;			    
-                      if (debugmode) printf( "Disk write %8d \n", Pvictim.pageNo) ;
-		      }
-		   else
-                      if (debugmode) printf( "Discard    %8d \n", Pvictim.pageNo) ;
-		   }
+		  	disk_reads++ ;			/* Page fault, need to load it into memory */
+		  	if (debugmode) {
+		      printf( "Page fault %8d \n", page_number);
+			}
+		  	if (allocated < numFrames) {  			/* allocate it to an empty frame */
+                frame_no = allocateFrame(page_number);
+		     	allocated++;
+            } else {
+		      	Pvictim = selectVictim(page_number, replace);   /* returns page number of the victim  */
+		      	frame_no = checkInMemory( page_number);    /* find out the frame the new page is in */
+		   		if (Pvictim.modified) {          /* need to know victim page and modified  */
+                    disk_writes++;			    
+                    if (debugmode) printf( "Disk write %8d \n", Pvictim.pageNo);
+		      	}
+		   		else {
+                    if (debugmode) printf( "Discard    %8d \n", Pvictim.pageNo);
+				}
+		   	}
 		}
-		if ( rw == 'R'){
-		    if (debugmode) printf( "reading    %8d \n", page_number) ;
-		}
-		else if ( rw == 'W'){
+		if ( rw == 'R') {
+		    if (debugmode) printf( "reading    %8d \n", page_number);
+		} else if ( rw == 'W'){
 		    // mark page in page table as written - modified  
-		    if (debugmode) printf( "writting   %8d \n", page_number) ;
-		}
-		 else {
+		    if (debugmode) printf( "writting   %8d \n", page_number);
+		} else {
 		      printf( "Badly formatted file. Error on line %d\n", no_events+1); 
 		      exit (-1);
 		}
 
 		no_events++;
-        	do_line = fscanf(trace,"%x %c",&address,&rw);
+        do_line = fscanf(trace,"%x %c",&address,&rw);
 	}
 
 	printf( "total memory frames:  %d\n", numFrames);
