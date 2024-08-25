@@ -48,6 +48,7 @@ int checkInMemory(int page_number, int event_number, enum repl replace)
 			if (page_table[i].usage_data == -1) continue;
 			if (page_table[i].page.pageNo == page_number) {
 				result = i;
+				// For lru and clock, update the latest access time
 				switch (replace)
 				{
 				case lru:
@@ -69,7 +70,10 @@ int allocateFrame(int page_number, int event_number, enum repl replace)
 {
         // to do
 		int i = 0;
+		// Find first unassigned page
 		while (page_table[i].usage_data != -1) i++;
+
+		// Add the new page, (unmodified), and set the initial usage value depending on replacement policy
 		page_table[i].page.pageNo = page_number;
 		page_table[i].page.modified = 0;
 		switch (replace) {
@@ -85,7 +89,7 @@ int allocateFrame(int page_number, int event_number, enum repl replace)
         return i;
 }
 
-// Returns the index of the PTE with the lowest usage data value
+// Returns the index of the PTE with the lowest usage data value (lru and fifo)
 int findMinUsage() 
 {
 	int min_usage = page_table[0].usage_data;
@@ -99,7 +103,7 @@ int findMinUsage()
 	return min_usage_index;
 }
 
-// Returns the index of the first entry with a usage value of 0
+// Returns the index of the first entry with a usage value of 0 (clock)
 int findClockVictim() 
 {
 	while(page_table[clock_hand].usage_data != 0) {
@@ -115,7 +119,9 @@ int findClockVictim()
 page selectVictim(int page_number, int event_number, enum repl  mode )
 {
         page victim;
+		// Get the index of the victim page, depending on the replacement policy
 		int victim_frame_no = 0;
+		
 		switch (mode) {
 			case lru:
 			case fifo:
@@ -128,6 +134,7 @@ page selectVictim(int page_number, int event_number, enum repl  mode )
 				victim_frame_no = findClockVictim();
 				break;
 		}
+
 		// Copy victim frame data out
 		victim.pageNo = page_table[victim_frame_no].page.pageNo;
 		victim.modified = page_table[victim_frame_no].page.modified;
