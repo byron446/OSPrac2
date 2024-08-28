@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+page pageTable[100];
 
 typedef struct {
         int pageNo;
@@ -15,12 +16,12 @@ const   int pageoffset = 12;            /* Page size is fixed to 4 KB */
 int     numFrames ;
 
 /* Creates the page table structure to record memory allocation */
-int     createMMU (int frames)
-{
-
-        // to do
-
-        return 0;
+int createMMU(int frames){
+    for (int i = 0; i < frames; i++){
+        pageTable[i].pageNo = -1; 
+        pageTable[i].modified = 0;
+    }
+    return 0;
 }
 
 /* Checks for residency: returns frame no or -1 if not found */
@@ -35,22 +36,43 @@ int     checkInMemory( int page_number)
 }
 
 /* allocate page to the next free frame and record where it put it */
-int     allocateFrame( int page_number)
-{
-        // to do
-        return;
+int allocateFrame(int page_number){
+    for (int i = 0; i < numFrames; i++){
+        if (pageTable[i].pageNo == -1){ 
+            pageTable[i].pageNo = page_number;
+            pageTable[i].modified = 0; 
+            return i; 
+        }
+    }
+    return -1; 
 }
 
 /* Selects a victim for eviction/discard according to the replacement algorithm,  returns chosen frame_no  */
-page    selectVictim(int page_number, enum repl  mode )
-{
-        page    victim;
-        // to do 
-        victim.pageNo = 0;
-        victim.modified = 0;
-        return (victim) ;
-}
+// page    selectVictim(int page_number, enum repl  mode )
+// {
+//         page    victim;
+//         // to do 
+//         victim.pageNo = 0;
+//         victim.modified = 0;
+//         return (victim) ;
+// }
 
+page selectVictim(int page_number, enum repl mode){
+    static int clockHand = 0; // Clock hand
+
+    while (1){
+
+        if (pageTable[clockHand].modified == 0){
+            page victim = pageTable[clockHand];
+            pageTable[clockHand].pageNo = page_number; 
+            clockHand = (clockHand + 1) % numFrames;
+            return victim;
+        }
+        
+        pageTable[clockHand].modified = 0;
+        clockHand = (clockHand + 1) % numFrames;
+    }
+}
 		
 main(int argc, char *argv[])
 {
