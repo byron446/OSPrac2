@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 	{
 		page_number =  address >> pageoffset;
 		frame_no = checkInMemory(page_number, no_events, replace) ;    /* ask for physical address */
-		printf("clock hand: %d\n", clock_hand);
+		// printf("clock hand: %d\n", clock_hand);
 		if ( frame_no == -1 )
 		{
 		  	disk_reads++ ;			/* Page fault, need to load it into memory */
