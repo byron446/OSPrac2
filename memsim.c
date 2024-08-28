@@ -57,22 +57,58 @@ int allocateFrame(int page_number){
 //         return (victim) ;
 // }
 
-page selectVictim(int page_number, enum repl mode){
-    static int clockHand = 0; // Clock hand
+// page selectVictim(int page_number, enum repl mode){
+//     static int clockHand = 0; // Clock hand
 
-    while (1){
+//     while (1){
 
-        if (pageTable[clockHand].modified == 0){
-            page victim = pageTable[clockHand];
-            pageTable[clockHand].pageNo = page_number; 
-            clockHand = (clockHand + 1) % numFrames;
-            return victim;
-        }
+//         if (pageTable[clockHand].modified == 0){
+//             page victim = pageTable[clockHand];
+//             pageTable[clockHand].pageNo = page_number; 
+//             clockHand = (clockHand + 1) % numFrames;
+//             return victim;
+//         }
         
+//         pageTable[clockHand].modified = 0;
+//         clockHand = (clockHand + 1) % numFrames;
+//     }
+// }
+
+page selectVictim(int page_number, enum repl mode){
+    static int clockHand = 0;
+    page victim;
+
+    if (mode == clock) {
+        int start = clockHand;
+
+        do {
+            if (pageTable[clockHand].modified == 0){
+                
+                victim = pageTable[clockHand];
+                
+                pageTable[clockHand].pageNo = page_number;
+                pageTable[clockHand].modified = 0;
+                clockHand = (clockHand + 1) % numFrames;
+                return victim;
+            } else{
+          
+                pageTable[clockHand].modified = 0;
+                clockHand = (clockHand + 1) % numFrames;
+            }
+        } while (clockHand != start);
+
+        victim = pageTable[clockHand];
+        pageTable[clockHand].pageNo = page_number;
         pageTable[clockHand].modified = 0;
         clockHand = (clockHand + 1) % numFrames;
+        return victim;
     }
+    
+    victim.pageNo = 0;
+    victim.modified = 0;
+    return victim;
 }
+
 		
 main(int argc, char *argv[])
 {
