@@ -106,6 +106,7 @@ int findMinUsage()
 // Returns the index of the first entry with a usage value of 0 (clock)
 int findClockVictim() 
 {
+	// int clock_hand = 0;
 	while(page_table[clock_hand].usage_data != 0) {
 		page_table[clock_hand].usage_data = 0;
 		clock_hand++;
@@ -132,9 +133,12 @@ page selectVictim(int page_number, int event_number, enum repl  mode )
 				break;
 			case clock:
 				victim_frame_no = findClockVictim();
+				// clock_hand;
+				clock_hand++;
+				clock_hand %= numFrames;
 				break;
 		}
-
+		//printf("victim page index: %d\n", victim_frame_no);
 		// Copy victim frame data out
 		victim.pageNo = page_table[victim_frame_no].page.pageNo;
 		victim.modified = page_table[victim_frame_no].page.modified;
@@ -231,7 +235,7 @@ int main(int argc, char *argv[])
 	{
 		page_number =  address >> pageoffset;
 		frame_no = checkInMemory(page_number, no_events, replace) ;    /* ask for physical address */
-
+		printf("clock hand: %d\n", clock_hand);
 		if ( frame_no == -1 )
 		{
 		  	disk_reads++ ;			/* Page fault, need to load it into memory */
@@ -254,11 +258,11 @@ int main(int argc, char *argv[])
 		   	}
 		}
 		if ( rw == 'R') {
-		    if (debugmode) printf( "reading    %8x \n", page_number);
+		    if (debugmode) printf( "reading    %8x \n\n", page_number);
 		} else if ( rw == 'W'){
 		    // mark page in page table as written - modified
 			page_table[frame_no].page.modified = 1;
-		    if (debugmode) printf( "writting   %8x \n", page_number);
+		    if (debugmode) printf( "writing    %8x \n\n", page_number);
 		} else {
 		      printf( "Badly formatted file. Error on line %d\n", no_events+1); 
 		      exit (-1);
