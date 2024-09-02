@@ -159,10 +159,7 @@ page selectVictim(int page_number, int event_number, enum repl  mode )
         return (victim);
 }
 
-		
-int main(int argc, char *argv[])
-{
-  
+int runSim(int argc, char *argv[],int nFrames){
 	char	*tracename;
 	int	page_number,frame_no, done ;
 	int	do_line, i;
@@ -188,8 +185,9 @@ int main(int argc, char *argv[])
             printf( "Cannot open trace file %s \n", tracename);
             exit (-1);
 		}
-		numFrames = atoi(argv[2]);
+		//numFrames = atoi(argv[2]);
 		// Check for valid number of frames
+		numFrames=nFrames;
         if (numFrames < 1) {
             printf( "Frame number must be at least 1\n");
             exit (-1);
@@ -271,11 +269,22 @@ int main(int argc, char *argv[])
 		no_events++;
         do_line = fscanf(trace,"%x %c",&address,&rw);
 	}
-
+	FILE *ptr;
+	ptr=fopen("test.csv","a");
+	fprintf(ptr,"%d,%d,%d,%d,%.6f\n",numFrames,no_events,disk_reads,disk_writes,(float) disk_reads/no_events);
 	printf( "total memory frames:  %d\n", numFrames);
 	printf( "events in trace:      %d\n", no_events);
 	printf( "total disk reads:     %d\n", disk_reads);
 	printf( "total disk writes:    %d\n", disk_writes);
 	printf( "page fault rate:      %.4f\n", (float) disk_reads/no_events);
 }
-				
+int main(int argc, char *argv[])
+{
+	int nFrames=0;
+  	for(int i=1;i<100;i++){
+		nFrames=i;
+		runSim( argc,  argv,nFrames);
+	}
+	
+	
+}
